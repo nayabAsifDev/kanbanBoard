@@ -1,28 +1,25 @@
 import graphene
 from .list_schema import ListType
 from .card_schema import CardType
-from models.list_model import ListModel
-from models.card_model import CardModel
-from database.dynamodb_client import get_dynamodb_client
+from ..resolvers import card_resolvers, list_resolvers
 
 class Query(graphene.ObjectType):
-    lists = graphene.List(ListType)
-    cards = graphene.List(CardType)
+    # List
+    ListTypeList = graphene.List(ListType)
+    get_list = graphene.Field(ListType, id=graphene.String(required=True))
+    get_all_list = graphene.Field(ListTypeList)
 
-    def resolve_lists(self, info):
-        # Here you'll implement the logic to fetch data from DynamoDB
-        dynamodb = get_dynamodb_client()
-        # Example: Fetching data from DynamoDB (you need to implement the actual logic)
-        # items = dynamodb.scan(TableName='YourTableName')['Items']
-        # return [ListModel(item['id'], item['title'], item['sort']) for item in items]
-        return []  # Replace with actual data
+    # Card
+    CardTypeList = graphene.List(CardType)
+    get_card = graphene.Field(CardTypeList, key=graphene.String(required=True), listId=graphene.String(required=True))
 
-    def resolve_cards(self, info):
-        # Implement the logic to fetch cards from DynamoDB
-        dynamodb = get_dynamodb_client()
-        # Example: Fetching data from DynamoDB (implement actual logic)
-        # items = dynamodb.scan(TableName='YourCardTableName')['Items']
-        # return [CardModel(...) for item in items]
-        return []  # Replace with actual data
+    # List
+    def resolve_get_list(self, info, id):
+        return list_resolvers.resolve_get_list(id)
+    def resolve_get_all_list(self, info):
+        return list_resolvers.resolve_get_all_list()
 
-# Optionally, add filtering capabilities to these queries
+    # Card
+    def resolve_get_card(self, info, key, listId):
+        return card_resolvers.resolve_get_card(key, listId)
+
