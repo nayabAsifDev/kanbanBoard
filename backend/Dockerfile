@@ -1,5 +1,5 @@
 # Dockerfile for backend service
-FROM python:3.8
+FROM python:3.10.12-slim-bullseye
 
 WORKDIR /app
 
