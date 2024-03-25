@@ -5,16 +5,21 @@ from ..resolvers import card_resolvers, list_resolvers
 
 class Query(graphene.ObjectType):
     # List
+    ListTypeList = graphene.List(ListType)
     get_list = graphene.Field(ListType, id=graphene.String(required=True))
+    get_all_list = graphene.Field(ListTypeList)
+
     # Card
-    get_card = graphene.Field(CardType, key=graphene.String(required=True), list_id=graphene.String(required=True))
+    CardTypeList = graphene.List(CardType)
+    get_card = graphene.Field(CardTypeList, key=graphene.String(required=True), listId=graphene.String(required=True))
 
     # List
     def resolve_get_list(self, info, id):
         return list_resolvers.resolve_get_list(id)
+    def resolve_get_all_list(self, info):
+        return list_resolvers.resolve_get_all_list()
 
     # Card
-    def resolve_get_card(self, info, key, list_id):
-        return card_resolvers.resolve_get_card(key, list_id)
+    def resolve_get_card(self, info, key, listId):
+        return card_resolvers.resolve_get_card(key, listId)
 
-# Optionally, add filtering capabilities to these queries

@@ -6,8 +6,9 @@ class ListHandler:
         self.table = self.dynamodb.Table('Lists')
 
     def get_list(self, id):
-        # Logic to get a list item from the DynamoDB Lists table
         response = self.table.get_item(Key={'id': id})
         return response.get('Item')
 
-    # Other CRUD operations for Lists table...
+    def get_all_list(self):
+        response = self.table.scan()
+        return response['Items']
