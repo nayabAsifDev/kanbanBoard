@@ -15,7 +15,7 @@ function Stage({ data, stage, removeTask, updateTask }) {
   return (
     <div className="p-2 max-h-[calc(100vh-200px)] overflow-y-auto">
       <div className="grid gap-2">
-        {data.map((task, index) => (
+        {data && data.map((task, index) => (
           <Draggable key={task.id} draggableId={task.id} index={index}>
             {(provided, snapshot) => (
               <div
@@ -40,7 +40,7 @@ function Stage({ data, stage, removeTask, updateTask }) {
                   {task.text && (
                     <React.Fragment>
                       <div className="col-span-1">
-                        <Tooltip content={new Date(task.updated).toLocaleString()} placement="top">
+                        <Tooltip content={new Date(task.created).toLocaleString()} placement="top">
                           <button>
                             <Icon type="info" width="14" height="14" className="text-kanban_txt mt-[1px]" />
                           </button>
