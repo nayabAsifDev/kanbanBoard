@@ -3,9 +3,11 @@ import {
   UPDATE_TASK_ITEM,
   UPDATE_TASKS,
   REMOVE_TASK,
-  UPDATE_SEARCH_TERM
+  ADD_STAGE,
+  REMOVE_STAGE
 } from "./actions";
 import stages from "./stages";
+import { createUUID } from "./utils";
 
 export const getInitialState = stages => ({
   ...stages.reduce((mem, { key }) => {
@@ -17,25 +19,20 @@ export const getInitialState = stages => ({
 
 const initialState = getInitialState(stages);
 
-function create_UUID() {
-  let dt = new Date().getTime();
-  const uuid = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(
-    c
-  ) {
-    const r = (dt + Math.random() * 16) % 16 | 0;
-    dt = Math.floor(dt / 16);
-    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
-  });
-  return uuid;
-}
-
 export default function reducer(state = initialState, action) {
   switch (action.type) {
-    case UPDATE_SEARCH_TERM: {
+    case ADD_STAGE: {
       return {
         ...state,
-        searchTerm: action.payload
-      };
+        [`${action.payload.key}`]: []
+      }
+    }
+
+    case REMOVE_STAGE: {
+      delete state[`${action.payload.id}`]
+      return{
+        ...state
+      }
     }
 
     case NEW_TASK_ITEM: {
@@ -44,13 +41,13 @@ export default function reducer(state = initialState, action) {
       return {
         ...state,
         [stage]: [
+          ...state[stage],
           {
-            id: create_UUID(),
+            id: createUUID(),
             editMode: true,
             created: now,
             updated: now
           },
-          ...state[stage]
         ]
       };
     }

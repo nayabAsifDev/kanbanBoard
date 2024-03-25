@@ -1,15 +1,18 @@
 const stages = [
   {
     key: "todo",
-    title: "To-Do"
+    title: "To-Do",
+    sort: "newest"
   },
   {
     key: "progress",
-    title: "In Progress"
+    title: "In Progress",
+    sort: "newest"
   },
   {
     key: "done",
-    title: "Done"
+    title: "Done",
+    sort: "newest"
   }
 ];
 

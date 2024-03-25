@@ -7,9 +7,10 @@ const Icon = ({
   viewBox = "0 0 20 20",
   title,
   children,
-  type
+  type,
+  className
 }) => (
-  <svg width={width} height={height} viewBox={viewBox}>
+  <svg width={width} height={height} viewBox={viewBox} className={className}>
     <title>{title}</title>
     {children || icons(type)}
   </svg>
