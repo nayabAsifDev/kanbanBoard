@@ -15,3 +15,4 @@ class CardHandler:
     def get_all_card(self):
         response = self.table.scan()
         return response['Items']
+
