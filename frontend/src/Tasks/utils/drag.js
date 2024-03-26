@@ -27,26 +27,43 @@ const move = (source, destination, droppableSource, droppableDestination) => {
   return result;
 };
 
-export const handleDragEnd = ({ result, updateTasks, getList }) => {
+export const handleDragEnd = async ({ result, updateTasks, getList, cardIndexDrag, cardIndexDragToOther }) => {
   const { source, destination } = result;
-
+  
   // dropped outside the list
   if (!destination) {
     return;
   }
-
+  
   let tasks = {};
-
+  
   if (source.droppableId === destination.droppableId) {
     const items = reorder(
       getList(source.droppableId),
       source.index,
       destination.index
     );
-
+      
     tasks = {
       [source.droppableId]: items
     };
+    updateTasks(tasks);
+    
+    try {
+      // Execute the mutation
+      let result = await cardIndexDrag({
+        variables: {
+          listId: source.droppableId, 
+          cardPos: source.index, 
+          targetPos: destination.index
+        }
+      });
+
+      console.log("result", result)
+    } catch (error) {
+      console.log("error", error)
+      alert(error)
+    }
   } else {
     tasks = move(
       getList(source.droppableId),
@@ -54,6 +71,23 @@ export const handleDragEnd = ({ result, updateTasks, getList }) => {
       source,
       destination
     );
+    updateTasks(tasks);
+
+    try {
+      // Execute the mutation
+      let result = await cardIndexDragToOther({
+        variables: {
+          cardListId: source.droppableId, 
+          targetListId: destination.droppableId, 
+          cardPos: source.index, 
+          targetPos: destination.index
+        }
+      });
+
+      console.log("result", result)
+    } catch (error) {
+      console.log("error", error)
+      alert(error)
+    }
   }
-  updateTasks(tasks);
 };
