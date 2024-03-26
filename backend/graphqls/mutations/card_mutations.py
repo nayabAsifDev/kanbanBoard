@@ -34,7 +34,6 @@ class CreateCard(graphene.Mutation):
         else:   #create state
             table.put_item(Item={'id': id, 'key': id, 'listId': listId, 'index': card_cnt, 'text': text, 'editMode': False, 'created': current_datetime, 'updated': current_datetime})
             return CreateCard(card=CardModel(id, id, listId, card_cnt, text, False, current_datetime, current_datetime))
-        
 
 class DeleteCard(graphene.Mutation):
     class Arguments:
