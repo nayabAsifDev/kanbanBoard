@@ -5,7 +5,8 @@ export const GET_DATA = gql`
     getAllList{
       key
       title
-      sort
+      sort,
+      created
     },
     getAllCard{
       id
@@ -82,6 +83,18 @@ export const DELETE_LIST = gql`
   mutation DeleteList($id: String!) {
     deleteList(id: $id){
       list
+    }
+  }
+`
+
+export const UPDATE_LIST = gql`
+  mutation UpdateList($id: String!, $sort: String!){
+    updateList(id: $id, sort: $sort) {
+      list {
+        id
+        title
+        sort
+      }
     }
   }
 `
