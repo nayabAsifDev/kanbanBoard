@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Store } from "../Store";
 
 import Stage from "./views/Stage";
-import stages from "./stages";
 import {
   UPDATE_TASKS,
   REMOVE_TASK,
@@ -10,43 +9,62 @@ import {
   UPDATE_TASK_ITEM,
   ADD_STAGE,
   REMOVE_STAGE,
+  INIT_STATE
 } from "./actions";
 import { DragDropContext, Droppable } from "react-beautiful-dnd";
 import { getListStyle, handleDragEnd } from "./utils/drag";
 import Icon from "Components/Icon";
 import Pop from "./views/Pop";
-import { createUUID } from "./utils";
-import { useQuery, gql } from '@apollo/client';
-
-const GET_LIST_DATA = gql`
-  query {
-    getAllList{
-      title
-      sort
-    }
-  }
-`;
+import { useQuery, useMutation } from '@apollo/client';
+import { getInitialState } from "./reducer";
+import { GET_DATA, CREATE_LIST } from "./gq";
 
 function Tasks() {
-  const { loading, error, data } = useQuery(GET_LIST_DATA);
-  
+  // Get Data Using Apollo Client
+  const { loading, error, data } = useQuery(GET_DATA);
   
   const { state, dispatch } = React.useContext(Store);
   
   const [sortList, setSortList] = useState([])
-  const [stageList, setStageList] = useState([...stages])
+  const [stageList, setStageList] = useState([])
   const [newListText, setNewListText] = useState("")
   const [isAddListMode, setIsAddListMode] = useState(false)
   
+  const [createList] = useMutation(CREATE_LIST);
+  
   useEffect(() => {
-    console.log("list data", data)
-  }, [data])
+    if(data){
+      console.log("list data", data.getAllList)
+      console.log("card data", data.getAllCard)
+
+      let payload = getInitialState([...data.getAllList])
+
+      data.getAllCard && data.getAllCard.length > 0 && data.getAllCard.map(data => (
+        payload[`${data.listId}`].push({
+          id: data.id,
+          text: data.text,
+          editMode: data.editMode,
+          created: new Date(data.created),
+          updated: new Date(data.updated),
+        })
+      ))
+
+      console.log("payload", payload)
+
+      dispatch({
+        type: INIT_STATE,
+        payload
+      });
+      setStageList([...data.getAllList])
+    }
+  }, [data, dispatch])
 
   useEffect(() => {
     let tmp_list = stageList.map(data => data.sort); // Using map to transform data and return the result
     setSortList([...tmp_list]);
   }, [stageList])
   
+  // Apollo client loading data and error message
   if (loading) return <p>Loading...</p>;
   if (error) return <p>Error: {error.message}</p>;
 
@@ -131,16 +149,31 @@ function Tasks() {
     setNewListText(e.target.value);
   }
 
-  const addNewList = () => {
-    let tmp_list = [...stageList];
-    let new_stage = {
-      key: createUUID(),
-      title: newListText,
-      sort: "newest"
+  const addNewList = async () => {
+    try {
+      // Execute the mutation
+      let result = await createList({
+        variables: {
+          title: newListText,
+        }
+      });
+
+      console.log("result", result)
+
+      let tmp_list = [...stageList];
+      let new_stage = {
+        key: result.data.createList.list.key,
+        title: result.data.createList.list.title,
+        sort: result.data.createList.list.sort
+      }
+      tmp_list.push(new_stage)
+      setStageList([...tmp_list])
+      addStage(new_stage)
+
+    } catch (error) {
+      console.log("error", error)
+      alert(error)
     }
-    tmp_list.push(new_stage)
-    setStageList([...tmp_list])
-    addStage(new_stage)
 
     // init 
     setIsAddListMode(false)
