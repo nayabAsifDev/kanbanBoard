@@ -23,8 +23,18 @@ class CreateCard(graphene.Mutation):
             FilterExpression=Attr('listId').eq(listId)
         )['Items'])
 
-        table.put_item(Item={'id': id, 'key': id, 'listId': listId, 'index': card_cnt, 'text': text, 'editMode': False, 'created': current_datetime, 'updated': current_datetime})
-        return CreateCard(card=CardModel(id, id, listId, card_cnt, text, False, current_datetime, current_datetime))
+        response = table.scan(
+            FilterExpression=Attr('listId').eq(listId) & Attr('id').eq(id)
+        )['Items']
+
+        if response:  # If the response is not empty update state
+            table.put_item(Item={'id': id, 'key': id, 'listId': listId, 'index': response[0]['index'], 'text': text, 'editMode': False, 'created': response[0]['created'], 'updated': current_datetime})
+            print("Response is not empty! 😊")
+            return CreateCard(card=CardModel(id, id, listId, response[0]['index'], text, False, current_datetime, current_datetime))
+        else:   #create state
+            table.put_item(Item={'id': id, 'key': id, 'listId': listId, 'index': card_cnt, 'text': text, 'editMode': False, 'created': current_datetime, 'updated': current_datetime})
+            return CreateCard(card=CardModel(id, id, listId, card_cnt, text, False, current_datetime, current_datetime))
+        
 
 class DeleteCard(graphene.Mutation):
     class Arguments:
@@ -37,6 +47,17 @@ class DeleteCard(graphene.Mutation):
         dynamodb = get_dynamodb_client(local=True)
         table = dynamodb.Table('Cards')
 
+        card_data = table.get_item(Key={'id': id}).get('Item')
+        card_cnt = len(table.scan(
+            FilterExpression=Attr('listId').eq(card_data['listId'])
+        )['Items'])
+
+        for num in range(int(card_data['index']) + 1, card_cnt):
+            tmp_card = table.scan(
+                FilterExpression=Attr('listId').eq(card_data['listId']) & Attr('index').eq(num)
+            )['Items']
+            table.put_item(Item={'id': tmp_card[0]['id'], 'key': tmp_card[0]['key'], 'listId': tmp_card[0]['listId'], 'index': tmp_card[0]['index'] - 1, 'text': tmp_card[0]['text'], 'editMode': False, 'created': tmp_card[0]['created'], 'updated': tmp_card[0]['updated']})
+        
         try:
             response = table.delete_item(Key={'id': id})
             return DeleteCard(card=True)

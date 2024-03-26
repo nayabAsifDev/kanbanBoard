@@ -17,7 +17,7 @@ import Icon from "Components/Icon";
 import Pop from "./views/Pop";
 import { useQuery, useMutation } from '@apollo/client';
 import { getInitialState } from "./reducer";
-import { GET_DATA, CREATE_LIST, CARD_INDEX_DRAG, CARD_INDEX_DRAG_TO_OTHER, DELETE_LIST } from "./gq";
+import { GET_DATA, CREATE_LIST, CARD_INDEX_DRAG, CARD_INDEX_DRAG_TO_OTHER, DELETE_LIST, UPDATE_LIST, DELETE_CARD } from "./gq";
 
 function Tasks() {
   // Get Data Using Apollo Client
@@ -34,6 +34,8 @@ function Tasks() {
   const [cardIndexDrag] = useMutation(CARD_INDEX_DRAG);
   const [cardIndexDragToOther] = useMutation(CARD_INDEX_DRAG_TO_OTHER);
   const [deleteList] = useMutation(DELETE_LIST)
+  const [updateList] = useMutation(UPDATE_LIST)
+  const [deleteCard] = useMutation(DELETE_CARD);
   
   useEffect(() => {
     if(data){
@@ -59,12 +61,15 @@ function Tasks() {
         type: INIT_STATE,
         payload
       });
-      setStageList([...data.getAllList])
+
+      let tmp_stages = [...data.getAllList]
+      tmp_stages && tmp_stages.length > 0 && tmp_stages.sort((a, b) => new Date(a.created) - new Date(b.created));
+      setStageList([...tmp_stages])
     }
   }, [data, dispatch])
 
   useEffect(() => {
-    let tmp_list = stageList.map(data => data.sort); // Using map to transform data and return the result
+    let tmp_list = stageList.map(() => "custom"); // Using map to transform data and return the result
     setSortList([...tmp_list]);
   }, [stageList])
   
@@ -87,13 +92,29 @@ function Tasks() {
   };
 
   const updateTask = payload => {
+    clearSortList()
+
     return dispatch({
       type: UPDATE_TASK_ITEM,
       payload
     });
   };
 
-  const removeTask = payload => {
+  const removeTask = async payload => {
+    try {
+      // Execute the mutation
+      let result = await deleteCard({
+        variables: {
+          id: payload.taskID,
+        }
+      });
+
+      console.log("result", result)
+    } catch (error) {
+      console.log("error", error)
+      alert(error)
+    }
+
     return dispatch({
       type: REMOVE_TASK,
       payload
@@ -132,18 +153,33 @@ function Tasks() {
     });
   };
 
-  const updateSortList = (index, value) => {
+  const updateSortList = async (id, index, value) => {
     let tmp_list = [...sortList]
     tmp_list[index] = value
     setSortList([...tmp_list])
+
+    try {
+      // Execute the mutation
+      let result = await updateList({
+        variables: {
+          id: id,
+          sort: value
+        }
+      });
+
+      console.log("result", result)
+    } catch (error) {
+      console.log("error", error)
+      alert(error)
+    }
+
   }
 
   const getList = key => state.tasks[key];
 
   const onDragEnd = result => {
     // clear sort list
-    let tmp_list = Array(sortList.length).fill("default");
-    setSortList([...tmp_list])
+    clearSortList()
 
     handleDragEnd({ result, updateTasks, getList, cardIndexDrag, cardIndexDragToOther });
   }
@@ -151,11 +187,11 @@ function Tasks() {
   const getStageData = (key, sort) => {
     switch(sort){
       case "newest":
-        return state.tasks[key] && state.tasks[key].length > 0 && state.tasks[key].sort((a, b) => new Date(a.created) - new Date(b.created));
-      case "oldest":
         return state.tasks[key] && state.tasks[key].length > 0 && state.tasks[key].sort((a, b) => new Date(b.created) - new Date(a.created));
+      case "oldest":
+        return state.tasks[key] && state.tasks[key].length > 0 && state.tasks[key].sort((a, b) => new Date(a.created) - new Date(b.created));
       case "update":
-        return state.tasks[key] && state.tasks[key].length > 0 && state.tasks[key].sort((a, b) => new Date(a.updated) - new Date(b.updated));
+        return state.tasks[key] && state.tasks[key].length > 0 && state.tasks[key].sort((a, b) => new Date(b.updated) - new Date(a.updated));
       case "alpha":
         return state.tasks[key] && state.tasks[key].length > 0 && state.tasks[key].sort((a, b) => a.text && b.text && a.text.localeCompare(b.text));
       case "custom":
@@ -165,8 +201,17 @@ function Tasks() {
     }
   };
 
+  function clearSortList(){
+    let tmp_list = Array(sortList.length).fill("default");
+    setSortList([...tmp_list])
+  }
+
   function handleNewListTextChange(e) {
     setNewListText(e.target.value);
+  }
+
+  function handleKeyPress(event) {
+    if (event.keyCode === 13) addNewList();
   }
 
   const addNewList = async () => {
@@ -255,6 +300,7 @@ function Tasks() {
                       placeholder="New item..."
                       value={newListText}
                       onChange={handleNewListTextChange}
+                      onKeyUp={handleKeyPress}
                       autoFocus
                     />
                     <div className="flex gap-4 py-1">
@@ -267,11 +313,11 @@ function Tasks() {
                 }
                 {
                   !isAddListMode && 
-                  <div className="flex gap-4">
+                  <div className="flex gap-4" onClick={() => setIsAddListMode(true)}>
                     <div>
                       <Icon type="add" width="12" height="12" className="text-white mt-1" />
                     </div>
-                    <p className="text-sm text-white font-bold cursor-default" onClick={() => setIsAddListMode(true)}>Add another list</p>
+                    <p className="text-sm text-white font-bold cursor-default">Add another list</p>
                   </div>
                 }
               </div>
