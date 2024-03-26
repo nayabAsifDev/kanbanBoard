@@ -1,5 +1,5 @@
 # Use official Node.js image as the base image
-FROM node:16 as base
+FROM node:20 as base
 
 # Define a build argument named PROJECT with a default value of 'api'.
 ARG PROJECT=frontend
